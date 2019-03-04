@@ -1,0 +1,74 @@
+<html>
+  <head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <title>BusConnect</title>
+    <link rel="stylesheet" href="css/main.css"/>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBi1AEaMd-T64BHgBSk5E3VnW6c5XsNnho"></script>
+    <script>
+      var socket = io.connect('http://188.166.22.231:80');
+      var map = null;
+      var locmarker = null;
+
+      socket.on("verify", function(data) {
+        jQuery.getJSON('http://188.166.22.231/api/ligne/171', function(data) {      
+          data.arrets.forEach(arret => {
+            /*addNotif(arret.name, arret.ville);*/
+          });
+        });
+        if(data.success) {
+          console.log("[!] Connexion au serveur réussie !");
+          console.log("[ID] " + data.id);
+          socket.emit("set_arret", { arret: "A-TEST" });
+        }
+      });
+      
+      socket.on("connect_error", () => {
+        alert("[!] Connexion échouée");
+      });
+      
+      socket.on("notifypresence", data => {
+        /*addNotif("Signalement de présence a l'arrêt " + data.arret, "Un utilisateur souhaite prendre la ligne " + data.ligne);*/
+      });
+      
+      socket.on("location_update", data => {
+        console.log(data);
+        map.setCenter({ lat: data.lat, lng: data.lng });
+        locmarker.setMap(null);
+        locmarker = new google.maps.Marker({
+          position: {lat: data.lat, lng: data.lng},
+          map: map
+        });
+      });
+      
+      function presence(ligne_num) {
+        socket.emit("presence", { ligne: ligne_num });
+      }
+      
+      /* function addNotif(title, text) {
+        var content = '<div class="notif"><p class="title">' + title + '</p><p>' + text + '</p></div>';
+        $("#notifications").html(content + $("#notifications").html());
+      }*/
+      function init() {
+              map = new google.maps.Map(document.getElementById('map'), {zoom: 19, center: {lat: -34.397, lng: 150.644}});
+
+      locmarker = new google.maps.Marker({
+          // The below line is equivalent to writing:
+          // position: new google.maps.LatLng(-34.397, 150.644)
+          position: {lat: -34.397, lng: 150.644},
+          map: map
+        });
+      }
+      
+      google.maps.event.addDomListener(window, 'load', init);
+    </script>
+  </head>
+  <body>
+    <header>
+      <p>BusConnect</p>
+    </header>
+    <div id="map"></div>
+  </body>
+</html>
